@@ -10,7 +10,7 @@ export default function LoginPage({
             <div className="w-full max-w-md p-8 rounded-2xl border border-purple-500/30 bg-slate-950/50 backdrop-blur-xl shadow-[0_0_50px_-12px_rgba(168,85,247,0.25)]">
                 <div className="mb-8 text-center">
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]">
-                        WORK MANIA
+                        時間集計アプリ
                     </h1>
                     <p className="mt-2 text-sm text-slate-400">ログインして業務を開始</p>
                 </div>

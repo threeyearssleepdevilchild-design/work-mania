@@ -24,9 +24,9 @@ export function TimerDisplay({ description, categoryId }: TimerDisplayProps) {
     // 【追加機能】ブラウザのタブタイトルを動的に変更
     useEffect(() => {
         if (isPlaying) {
-            document.title = `▶ ${formatTime(seconds)} - 作業マニア`;
+            document.title = `▶ ${formatTime(seconds)} - 時間集計アプリ`;
         } else {
-            document.title = "作業マニア | Work Mania";
+            document.title = "時間集計アプリ";
         }
     }, [seconds, isPlaying]);
 

@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Work Mania",
+  title: "時間集計アプリ",
   description: "Cyberpunk Time Tracker",
 };
 

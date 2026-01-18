@@ -17,7 +17,7 @@ export function Header() {
                     <span className="text-[10px] font-bold text-background">WM</span>
                 </div>
                 <h1 className="text-xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-                    WORK MANIA
+                    時間集計アプリ
                 </h1>
             </div>
             <div className="flex items-center gap-4">
