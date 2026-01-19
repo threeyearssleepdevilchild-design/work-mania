@@ -114,18 +114,32 @@ export function TaskInput({
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <label htmlFor="color" className="text-right text-sm font-medium">
+                            <label className="text-right text-sm font-medium self-start mt-2">
                                 カラー
                             </label>
-                            <div className="col-span-3 flex items-center gap-2">
-                                <Input
-                                    id="color"
-                                    type="color"
-                                    value={newCatColor}
-                                    onChange={(e) => setNewCatColor(e.target.value)}
-                                    className="w-12 h-10 p-1 bg-slate-900 border-slate-700 cursor-pointer"
-                                />
-                                <span className="text-sm text-slate-400 font-mono">{newCatColor}</span>
+                            <div className="col-span-3">
+                                <div className="grid grid-cols-7 gap-2">
+                                    {[
+                                        "#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e", "#10b981",
+                                        "#06b6d4", "#0ea5e9", "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
+                                        "#ec4899", "#f43f5e", "#64748b", "#94a3b8", "#1e293b", "#0f172a", "#ffffff"
+                                    ].map((color) => (
+                                        <button
+                                            key={color}
+                                            type="button"
+                                            className={`w-8 h-8 rounded-full border border-slate-700 transition-all ${newCatColor === color ? "ring-2 ring-white scale-110" : "hover:scale-105"
+                                                }`}
+                                            style={{ backgroundColor: color }}
+                                            onClick={() => setNewCatColor(color)}
+                                            aria-label={`Select color ${color}`}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="mt-2 flex items-center gap-2">
+                                    <span className="text-xs text-slate-400">選択中:</span>
+                                    <span className="w-4 h-4 rounded-full border border-slate-700" style={{ backgroundColor: newCatColor }}></span>
+                                    <span className="text-xs font-mono text-slate-300">{newCatColor}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
