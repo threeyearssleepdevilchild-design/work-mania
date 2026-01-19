@@ -7,7 +7,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { Loader2 } from "lucide-react";
 
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,21 @@ import { LogData, DashboardRange } from "@/hooks/useDashboardData"; // Import Lo
 
 export function Dashboard() {
     const { totalTime, chartData, logs, isLoading, deleteLog, updateLog, refreshLogs, range, setRange } = useDashboardData();
-    const { categories } = useCategories();
+    const { categories, deleteCategory, toggleArchiveCategory } = useCategories();
+
+    // Category Management State
+    const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+
+    const handleDeleteCategory = async (id: string) => {
+        if (confirm("このカテゴリを削除しますか？\n（使用中のカテゴリは削除できません）")) {
+            const { success } = await deleteCategory(id);
+            if (!success) {
+                alert("カテゴリの削除に失敗しました。使用中のカテゴリは削除できません。");
+            }
+        }
+    };
+
+
 
     // Edit State
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -84,8 +98,11 @@ export function Dashboard() {
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         <h2 className="text-2xl font-bold tracking-tight">ダッシュボード</h2>
-                        <Button variant="ghost" size="sm" onClick={refreshLogs} className="text-muted-foreground">
+                        <Button variant="ghost" size="sm" onClick={refreshLogs} className="text-muted-foreground mr-2">
                             更新
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setIsCategoryManagerOpen(true)}>
+                            カテゴリ管理
                         </Button>
                     </div>
                     <TabsList className="bg-muted/30">
@@ -96,6 +113,7 @@ export function Dashboard() {
                     </TabsList>
                 </div>
 
+                {/* ... (Charts and Stats) ... */}
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Stats Cards */}
@@ -292,6 +310,57 @@ export function Dashboard() {
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsEditOpen(false)}>キャンセル</Button>
                             <Button onClick={handleSaveEdit}>保存</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Category Manager Dialog */}
+                <Dialog open={isCategoryManagerOpen} onOpenChange={setIsCategoryManagerOpen}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>カテゴリ管理</DialogTitle>
+                            <CardDescription>使用しなくなったカテゴリを削除できます</CardDescription>
+                        </DialogHeader>
+                        <ScrollArea className="h-[300px] pr-4">
+                            <div className="space-y-4 mt-4">
+                                {categories.length > 0 ? (
+                                    categories.map((cat) => (
+                                        <div key={cat.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-4 h-4 rounded-full ${cat.is_archived ? 'opacity-50' : ''}`} style={{ backgroundColor: cat.color }} />
+                                                <span className={`font-medium ${cat.is_archived ? 'text-muted-foreground line-through' : ''}`}>{cat.name}</span>
+                                                {cat.is_archived && <span className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">非表示</span>}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-muted-foreground hover:text-primary"
+                                                    onClick={() => toggleArchiveCategory(cat.id, !cat.is_archived)}
+                                                    title={cat.is_archived ? "表示する" : "非表示にする"}
+                                                >
+                                                    {cat.is_archived ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-muted-foreground hover:text-destructive"
+                                                    onClick={() => handleDeleteCategory(cat.id)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center text-muted-foreground py-8">
+                                        カテゴリがありません
+                                    </div>
+                                )}
+                            </div>
+                        </ScrollArea>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsCategoryManagerOpen(false)}>閉じる</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

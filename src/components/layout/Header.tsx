@@ -9,6 +9,8 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
+import { signOut } from "@/app/login/actions";
+
 export function Header() {
     return (
         <header className="fixed top-0 left-0 w-full h-16 border-b border-border bg-background/80 backdrop-blur-md z-50 flex items-center justify-between px-6">
@@ -40,7 +42,11 @@ export function Header() {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Log out</DropdownMenuItem>
+                        <form action={signOut}>
+                            <button type="submit" className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground w-full text-left">
+                                ログアウト
+                            </button>
+                        </form>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

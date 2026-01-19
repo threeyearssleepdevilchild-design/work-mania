@@ -1,12 +1,16 @@
 import { login, signup } from './actions'
+import { LoginStatusDialog } from './LoginStatusDialog'
 
-export default function LoginPage({
+export default async function LoginPage({
     searchParams,
 }: {
-    searchParams: { message: string; error: string }
+    searchParams: Promise<{ message: string; error: string }>
 }) {
+    const { message, error } = await searchParams
+
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-black bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-black to-black text-white p-4">
+            <LoginStatusDialog message={message} error={error} />
             <div className="w-full max-w-md p-8 rounded-2xl border border-purple-500/30 bg-slate-950/50 backdrop-blur-xl shadow-[0_0_50px_-12px_rgba(168,85,247,0.25)]">
                 <div className="mb-8 text-center">
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]">
@@ -18,7 +22,7 @@ export default function LoginPage({
                 <form className="flex flex-col gap-4">
                     <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">
-                            社員ID
+                            氏名コード
                         </label>
                         <input
                             id="employee_id"
@@ -75,18 +79,6 @@ export default function LoginPage({
                             新規登録
                         </button>
                     </div>
-
-                    {searchParams?.message && (
-                        <div className="mt-4 rounded-lg border border-purple-500/20 bg-purple-500/10 p-3 text-center text-sm text-purple-200">
-                            {searchParams.message}
-                        </div>
-                    )}
-
-                    {searchParams?.error && (
-                        <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-center text-sm text-red-200">
-                            {searchParams.error}
-                        </div>
-                    )}
                 </form>
             </div>
         </div>

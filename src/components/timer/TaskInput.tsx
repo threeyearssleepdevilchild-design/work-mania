@@ -73,7 +73,7 @@ export function TaskInput({
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="uncategorized">未分類</SelectItem>
-                    {categories.map((category) => (
+                    {categories.filter(c => !c.is_archived).map((category) => (
                         <SelectItem key={category.id} value={category.id.toString()}>
                             <span className="flex items-center gap-2">
                                 <span
