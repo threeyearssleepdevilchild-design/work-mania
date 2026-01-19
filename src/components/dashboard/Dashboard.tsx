@@ -114,7 +114,7 @@ export function Dashboard() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold text-primary">
-                                    {chartData.length > 0 ? chartData.sort((a, b) => b.value - a.value)[0].name : "-"}
+                                    {chartData.length > 0 ? [...chartData].sort((a, b) => b.value - a.value)[0].name : "-"}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
                                     {chartData.length > 0 ? "最多アクティビティ" : "データなし"}
