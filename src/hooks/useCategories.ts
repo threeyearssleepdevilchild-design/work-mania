@@ -1,50 +1,30 @@
-
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
 
 export type Category = {
     id: string
     name: string
     color: string
-    is_archived: boolean
+    isArchived: boolean
 }
 
 export function useCategories() {
     const [categories, setCategories] = useState<Category[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const supabase = createClient()
 
     const fetchCategories = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+            const res = await fetch('/api/categories')
+            if (!res.ok) return
 
-            // First try: Fetch with is_archived support
-            const { data, error } = await supabase
-                .from('categories')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('is_archived', { ascending: true }) // Active first
-                .order('created_at', { ascending: true })
-
-            if (error) {
-                // Feature detection: If error is related to missing column (Postgres code 42703 or 400), try fallback
-                if (error.code === '42703' || error.code === 'PGRST100' || error.code === '400') {
-                    console.warn('Backend schema mismatch detected, falling back to legacy query.');
-                    const { data: fallbackData, error: fallbackError } = await supabase
-                        .from('categories')
-                        .select('*')
-                        .eq('user_id', user.id)
-                        .order('created_at', { ascending: true })
-
-                    if (fallbackError) throw fallbackError
-                    setCategories(fallbackData || [])
-                    return;
-                }
-                throw error
-            }
-
-            setCategories(data || [])
+            const data = await res.json()
+            // Map snake_case from API to camelCase for frontend
+            const mapped = data.map((cat: Record<string, unknown>) => ({
+                id: cat.id,
+                name: cat.name,
+                color: cat.color,
+                isArchived: cat.isArchived ?? false,
+            }))
+            setCategories(mapped)
         } catch (error) {
             console.error('Error fetching categories:', error)
         } finally {
@@ -58,23 +38,23 @@ export function useCategories() {
 
     const addCategory = async (name: string, color: string) => {
         try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) throw new Error("No user")
+            const res = await fetch('/api/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, color }),
+            })
 
-            const { data, error } = await supabase
-                .from('categories')
-                .insert({
-                    user_id: user.id,
-                    name,
-                    color,
-                })
-                .select()
-                .single()
+            if (!res.ok) throw new Error('Failed to add category')
 
-            if (error) throw error
-
-            setCategories(prev => [...prev, data])
-            return data
+            const data = await res.json()
+            const newCat: Category = {
+                id: data.id,
+                name: data.name,
+                color: data.color,
+                isArchived: data.isArchived ?? false,
+            }
+            setCategories(prev => [...prev, newCat])
+            return newCat
         } catch (error) {
             console.error('Error adding category:', error)
         }
@@ -82,12 +62,11 @@ export function useCategories() {
 
     const deleteCategory = async (id: string) => {
         try {
-            const { error } = await supabase
-                .from('categories')
-                .delete()
-                .eq('id', id)
+            const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
 
-            if (error) throw error
+            if (!res.ok) {
+                return { success: false, error: 'Delete failed' }
+            }
 
             setCategories(prev => prev.filter(c => c.id !== id))
             return { success: true }
@@ -99,15 +78,16 @@ export function useCategories() {
 
     const toggleArchiveCategory = async (id: string, isArchived: boolean) => {
         try {
-            const { error } = await supabase
-                .from('categories')
-                .update({ is_archived: isArchived })
-                .eq('id', id)
+            const res = await fetch(`/api/categories/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isArchived }),
+            })
 
-            if (error) throw error
+            if (!res.ok) throw new Error('Update failed')
 
             setCategories(prev => prev.map(c =>
-                c.id === id ? { ...c, is_archived: isArchived } : c
+                c.id === id ? { ...c, isArchived } : c
             ))
             return { success: true }
         } catch (error) {

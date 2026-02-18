@@ -1,4 +1,4 @@
-import { login, signup } from './actions'
+import { login } from './actions'
 import { LoginStatusDialog } from './LoginStatusDialog'
 
 export default async function LoginPage({
@@ -16,7 +16,7 @@ export default async function LoginPage({
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]">
                         時間集計アプリ
                     </h1>
-                    <p className="mt-2 text-sm text-slate-400">ログインして業務を開始</p>
+                    <p className="mt-2 text-sm text-slate-400">氏名コードを入力してログイン</p>
                 </div>
 
                 <form className="flex flex-col gap-4">
@@ -31,20 +31,6 @@ export default async function LoginPage({
                             required
                             className="w-full rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-purple-500 focus:bg-slate-900 focus:ring-1 focus:ring-purple-500"
                             placeholder="123456"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">
-                            パスワード
-                        </label>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            required
-                            className="w-full rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-purple-500 focus:bg-slate-900 focus:ring-1 focus:ring-purple-500"
-                            placeholder="••••••••"
                         />
                     </div>
 
@@ -71,16 +57,10 @@ export default async function LoginPage({
                             </span>
                             <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-500 opacity-0 transition-opacity group-hover:opacity-100" />
                         </button>
-
-                        <button
-                            formAction={signup}
-                            className="w-full rounded-lg border border-slate-700 bg-transparent px-4 py-3 text-sm font-semibold text-slate-300 transition-all hover:border-slate-500 hover:bg-slate-800 hover:text-white active:bg-slate-700"
-                        >
-                            新規登録
-                        </button>
                     </div>
                 </form>
             </div>
         </div>
     )
 }
+

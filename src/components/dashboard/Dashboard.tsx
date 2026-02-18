@@ -327,19 +327,19 @@ export function Dashboard() {
                                     categories.map((cat) => (
                                         <div key={cat.id} className="flex items-center justify-between p-3 border rounded-lg">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-4 h-4 rounded-full ${cat.is_archived ? 'opacity-50' : ''}`} style={{ backgroundColor: cat.color }} />
-                                                <span className={`font-medium ${cat.is_archived ? 'text-muted-foreground line-through' : ''}`}>{cat.name}</span>
-                                                {cat.is_archived && <span className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">非表示</span>}
+                                                <div className={`w-4 h-4 rounded-full ${cat.isArchived ? 'opacity-50' : ''}`} style={{ backgroundColor: cat.color }} />
+                                                <span className={`font-medium ${cat.isArchived ? 'text-muted-foreground line-through' : ''}`}>{cat.name}</span>
+                                                {cat.isArchived && <span className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">非表示</span>}
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-muted-foreground hover:text-primary"
-                                                    onClick={() => toggleArchiveCategory(cat.id, !cat.is_archived)}
-                                                    title={cat.is_archived ? "表示する" : "非表示にする"}
+                                                    onClick={() => toggleArchiveCategory(cat.id, !cat.isArchived)}
+                                                    title={cat.isArchived ? "表示する" : "非表示にする"}
                                                 >
-                                                    {cat.is_archived ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                                    {cat.isArchived ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                                                 </Button>
                                                 <Button
                                                     variant="ghost"

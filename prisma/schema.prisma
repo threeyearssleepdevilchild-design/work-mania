@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  employeeId  String   @unique @map("employee_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  timeEntries TimeEntry[]
+  categories  Category[]
+
+  @@map("users")
+}
+
+model Category {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  name       String
+  color      String
+  isArchived Boolean  @default(false) @map("is_archived")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user        User        @relation(fields: [userId], references: [id])
+  timeEntries TimeEntry[]
+
+  @@map("categories")
+}
+
+model TimeEntry {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  description String?
+  startTime   DateTime  @map("start_time")
+  endTime     DateTime? @map("end_time")
+  duration    Int?
+  categoryId  String?   @map("category_id")
+
+  user     User      @relation(fields: [userId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("time_entries")
+}

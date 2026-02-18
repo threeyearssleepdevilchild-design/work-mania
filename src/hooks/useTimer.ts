@@ -1,44 +1,31 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { createClient } from '@/utils/supabase/client'
 
 export function useTimer() {
     const [isPlaying, setIsPlaying] = useState(false)
     const [seconds, setSeconds] = useState(0)
-    /* Hook state now uses string ID for UUID compatibility */
     const [entryId, setEntryId] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
-    const supabase = createClient()
 
     // 初期ロード時：未完了のタイマーがあれば復元
     useEffect(() => {
         const fetchActiveTimer = async () => {
             try {
-                const {
-                    data: { user },
-                } = await supabase.auth.getUser()
-
-                if (!user) {
+                const res = await fetch('/api/time-entries/active')
+                if (!res.ok) {
                     setIsLoading(false)
                     return
                 }
 
-                const { data, error } = await supabase
-                    .from('time_entries')
-                    .select('id, start_time')
-                    .eq('user_id', user.id)
-                    .is('end_time', null)
-                    .order('start_time', { ascending: false })
-                    .limit(1)
-                    .maybeSingle()
+                const { activeEntry } = await res.json()
 
-                if (data) {
-                    const startTime = new Date(data.start_time).getTime()
+                if (activeEntry) {
+                    const startTime = new Date(activeEntry.startTime).getTime()
                     const now = new Date().getTime()
                     const elapsed = Math.floor((now - startTime) / 1000)
 
                     setSeconds(elapsed >= 0 ? elapsed : 0)
-                    setEntryId(data.id)
+                    setEntryId(activeEntry.id)
                     setIsPlaying(true)
                 }
             } catch (error) {
@@ -70,30 +57,22 @@ export function useTimer() {
         }
     }, [isPlaying])
 
-    // 引数を追加: description, categoryId
     const startTimer = useCallback(async (description?: string, categoryId?: string | null) => {
         try {
             setIsLoading(true)
-            const {
-                data: { user },
-            } = await supabase.auth.getUser()
 
-            if (!user) throw new Error('User not found')
+            const res = await fetch('/api/time-entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    description: description || 'Untitled Task',
+                    categoryId: categoryId || null,
+                }),
+            })
 
-            const startTime = new Date().toISOString()
+            if (!res.ok) throw new Error('Failed to start timer')
 
-            const { data, error } = await supabase
-                .from('time_entries')
-                .insert({
-                    user_id: user.id,
-                    start_time: startTime,
-                    description: description || 'Untitled Task', // カラム名を description に変更
-                    category_id: categoryId || null, // UUIDなのでそのまま渡す (nullチェックのみ)
-                })
-                .select('id')
-                .single()
-
-            if (error) throw error
+            const data = await res.json()
 
             setEntryId(data.id)
             setIsPlaying(true)
@@ -111,15 +90,16 @@ export function useTimer() {
             setIsLoading(true)
             const endTime = new Date().toISOString()
 
-            const { error } = await supabase
-                .from('time_entries')
-                .update({
-                    end_time: endTime,
+            const res = await fetch(`/api/time-entries/${entryId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endTime,
                     duration: seconds,
-                })
-                .eq('id', entryId)
+                }),
+            })
 
-            if (error) throw error
+            if (!res.ok) throw new Error('Failed to stop timer')
 
             setIsPlaying(false)
             setEntryId(null)
@@ -131,7 +111,6 @@ export function useTimer() {
         }
     }, [entryId, seconds])
 
-    // toggleTimer も引数を受け取るように変更
     const toggleTimer = useCallback((description?: string, categoryId?: string | null) => {
         if (isPlaying) {
             stopTimer()
