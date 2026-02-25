@@ -7,11 +7,17 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { Loader2 } from "lucide-react";
 
-import { Trash2, Pencil, Eye, EyeOff } from "lucide-react";
+import { Trash2, Pencil, Eye, EyeOff, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useCategories } from "@/hooks/useCategories";
@@ -104,6 +110,28 @@ export function Dashboard() {
                         <Button variant="outline" size="sm" onClick={() => setIsCategoryManagerOpen(true)}>
                             カテゴリ管理
                         </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-1">
+                                    <Download className="h-4 w-4" />
+                                    CSV出力
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuItem onClick={() => {
+                                    window.open(`/api/time-entries/export?range=${range}`, '_blank')
+                                }}>
+                                    {getRangeLabel()}をエクスポート
+                                </DropdownMenuItem>
+                                {range !== 'all' && (
+                                    <DropdownMenuItem onClick={() => {
+                                        window.open('/api/time-entries/export?range=all', '_blank')
+                                    }}>
+                                        全期間をエクスポート
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                     <TabsList className="bg-muted/30">
                         <TabsTrigger value="today">今日</TabsTrigger>
