@@ -5,8 +5,10 @@ import { Header } from "@/components/layout/Header";
 import { TimerDisplay } from "@/components/timer/TimerDisplay";
 import { TaskInput } from "@/components/timer/TaskInput";
 import { Dashboard } from "@/components/dashboard/Dashboard";
+import { useKeepAlive } from "@/hooks/useKeepAlive";
 
 export default function Home() {
+  useKeepAlive();
   const [description, setDescription] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
