@@ -10,12 +10,21 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || 'all'
+    const fromParam = searchParams.get('from')
+    const toParam = searchParams.get('to')
 
     let startDate: Date | undefined
+    let endDate: Date | undefined
     const now = new Date()
     now.setHours(0, 0, 0, 0)
 
-    if (range === 'today') {
+    if (fromParam && toParam) {
+        // カスタム日付範囲
+        startDate = new Date(fromParam)
+        startDate.setHours(0, 0, 0, 0)
+        endDate = new Date(toParam)
+        endDate.setHours(23, 59, 59, 999)
+    } else if (range === 'today') {
         startDate = now
     } else if (range === 'week') {
         const day = now.getDay()
@@ -31,6 +40,7 @@ export async function GET(request: NextRequest) {
             userId: session.userId,
             endTime: { not: null },
             ...(startDate ? { startTime: { gte: startDate } } : {}),
+            ...(endDate ? { startTime: { lte: endDate } } : {}),
         },
         include: {
             category: {
@@ -67,14 +77,20 @@ export async function GET(request: NextRequest) {
     const csv = BOM + header + '\n' + rows.join('\n')
 
     // ファイル名に期間を含める
-    const rangeLabel: Record<string, string> = {
-        today: '今日',
-        week: '今週',
-        month: '今月',
-        all: '全期間',
+    let filenameLabel: string
+    if (fromParam && toParam) {
+        filenameLabel = `${fromParam}_${toParam}`
+    } else {
+        const rangeLabel: Record<string, string> = {
+            today: '今日',
+            week: '今週',
+            month: '今月',
+            all: '全期間',
+        }
+        filenameLabel = rangeLabel[range] || '全期間'
     }
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-    const filename = `作業記録_${rangeLabel[range] || '全期間'}_${dateStr}.csv`
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    const filename = `作業記録_${filenameLabel}_${todayStr}.csv`
 
     return new NextResponse(csv, {
         headers: {
@@ -83,3 +99,4 @@ export async function GET(request: NextRequest) {
         },
     })
 }
+

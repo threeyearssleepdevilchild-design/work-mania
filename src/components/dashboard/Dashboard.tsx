@@ -30,6 +30,17 @@ export function Dashboard() {
     // Category Management State
     const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
 
+    // CSV Export Date Range State
+    const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+    const [exportFrom, setExportFrom] = useState('');
+    const [exportTo, setExportTo] = useState('');
+
+    const handleCustomExport = () => {
+        if (!exportFrom || !exportTo) return;
+        window.open(`/api/time-entries/export?from=${exportFrom}&to=${exportTo}`, '_blank');
+        setIsExportDialogOpen(false);
+    };
+
     const handleDeleteCategory = async (id: string) => {
         if (confirm("このカテゴリを削除しますか？\n（使用中のカテゴリは削除できません）")) {
             const { success } = await deleteCategory(id);
@@ -130,6 +141,16 @@ export function Dashboard() {
                                         全期間をエクスポート
                                     </DropdownMenuItem>
                                 )}
+                                <DropdownMenuItem onClick={() => {
+                                    // デフォルトで今月の範囲をセット
+                                    const now = new Date();
+                                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                                    setExportFrom(firstDay.toISOString().slice(0, 10));
+                                    setExportTo(now.toISOString().slice(0, 10));
+                                    setIsExportDialogOpen(true);
+                                }}>
+                                    日付を指定してエクスポート
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
@@ -389,6 +410,41 @@ export function Dashboard() {
                         </ScrollArea>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsCategoryManagerOpen(false)}>閉じる</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                {/* Date Range Export Dialog */}
+                <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+                    <DialogContent className="max-w-sm">
+                        <DialogHeader>
+                            <DialogTitle>期間を指定してエクスポート</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="export-from">開始日</Label>
+                                <Input
+                                    id="export-from"
+                                    type="date"
+                                    value={exportFrom}
+                                    onChange={(e) => setExportFrom(e.target.value)}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="export-to">終了日</Label>
+                                <Input
+                                    id="export-to"
+                                    type="date"
+                                    value={exportTo}
+                                    onChange={(e) => setExportTo(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>キャンセル</Button>
+                            <Button onClick={handleCustomExport} disabled={!exportFrom || !exportTo} className="gap-1">
+                                <Download className="h-4 w-4" />
+                                ダウンロード
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
