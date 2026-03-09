@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, PenLine, List } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -21,6 +21,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { useCategories } from "@/hooks/useCategories";
+import { FIXED_CATEGORIES, TASK_OPTIONS_BY_CATEGORY, ALL_TASK_OPTIONS } from "@/lib/taskOptions";
 
 type TaskInputProps = {
     description: string;
@@ -39,6 +40,7 @@ export function TaskInput({
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newCatName, setNewCatName] = useState("");
     const [newCatColor, setNewCatColor] = useState("#a855f7"); // Default purple
+    const [isFreeText, setIsFreeText] = useState(false);
 
     const handleCreateCategory = async () => {
         if (!newCatName.trim()) return;
@@ -47,10 +49,39 @@ export function TaskInput({
         setIsDialogOpen(false);
     };
 
+    // カテゴリを固定リスト + DB上の既存カテゴリに分けて表示
+    const activeCategories = categories.filter(c => !c.isArchived);
+    const fixedCategoryEntries = activeCategories.filter(c =>
+        (FIXED_CATEGORIES as readonly string[]).includes(c.name)
+    );
+    const otherCategories = activeCategories.filter(c =>
+        !(FIXED_CATEGORIES as readonly string[]).includes(c.name)
+    );
+
+    // 選択中のカテゴリ名を取得してフィルタリング
+    const selectedCategoryName = selectedCategoryId
+        ? categories.find(c => c.id.toString() === selectedCategoryId)?.name
+        : null;
+    const currentTaskOptions = selectedCategoryName && TASK_OPTIONS_BY_CATEGORY[selectedCategoryName]
+        ? TASK_OPTIONS_BY_CATEGORY[selectedCategoryName]
+        : ALL_TASK_OPTIONS;
+
+    // カテゴリ変更時のハンドラ（作業内容が新リストに無ければリセット）
+    const handleCategoryChange = (catId: string | null) => {
+        setSelectedCategoryId(catId);
+        const catName = catId ? categories.find(c => c.id.toString() === catId)?.name : null;
+        const newOptions = catName && TASK_OPTIONS_BY_CATEGORY[catName]
+            ? TASK_OPTIONS_BY_CATEGORY[catName]
+            : ALL_TASK_OPTIONS;
+        if (description && !newOptions.includes(description)) {
+            setDescription("");
+        }
+    };
+
     return (
-        <div className="flex items-center gap-4 w-full max-w-2xl mx-auto mt-8 p-4 bg-muted/20 rounded-xl backdrop-blur-sm border border-white/5 shadow-lg">
+        <div className="flex items-center gap-3 w-full max-w-2xl mx-auto mt-8 p-4 bg-muted/20 rounded-xl backdrop-blur-sm border border-white/5 shadow-lg">
             <div
-                className="w-4 h-4 rounded-full shadow-[0_0_10px_currentColor] transition-colors duration-300"
+                className="w-4 h-4 rounded-full shadow-[0_0_10px_currentColor] transition-colors duration-300 flex-shrink-0"
                 style={{
                     backgroundColor: selectedCategoryId
                         ? categories.find(c => c.id.toString() === selectedCategoryId)?.color || "#22d3ee"
@@ -60,20 +91,56 @@ export function TaskInput({
                         : "#64748b"
                 }}
             ></div>
-            <Input
-                placeholder="今、何に取り組んでいますか？"
-                className="flex-1 bg-transparent border-none text-lg focus-visible:ring-0 placeholder:text-muted-foreground/50 text-foreground"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-            />
 
-            <Select value={selectedCategoryId || ""} onValueChange={setSelectedCategoryId}>
-                <SelectTrigger className="w-[180px] bg-background/50 border-white/10">
+            {/* 作業内容：プルダウン or 自由記入 */}
+            {isFreeText ? (
+                <Input
+                    placeholder="作業内容を入力..."
+                    className="flex-1 bg-transparent border-none text-lg focus-visible:ring-0 placeholder:text-muted-foreground/50 text-foreground"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                />
+            ) : (
+                <Select
+                    value={description || ""}
+                    onValueChange={(val) => setDescription(val)}
+                >
+                    <SelectTrigger className="flex-1 bg-background/50 border-white/10 text-base">
+                        <SelectValue placeholder="作業内容を選択" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {currentTaskOptions.map((option) => (
+                            <SelectItem key={option} value={option}>
+                                {option}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            )}
+
+            {/* 切替ボタン */}
+            <Button
+                size="icon"
+                variant="ghost"
+                className="rounded-full hover:bg-white/10 flex-shrink-0"
+                onClick={() => {
+                    setIsFreeText(!isFreeText);
+                    setDescription("");
+                }}
+                title={isFreeText ? "リストから選択" : "自由記入に切替"}
+            >
+                {isFreeText ? <List className="h-5 w-5" /> : <PenLine className="h-5 w-5" />}
+            </Button>
+
+            {/* カテゴリ選択（固定項目優先） */}
+            <Select value={selectedCategoryId || ""} onValueChange={handleCategoryChange}>
+                <SelectTrigger className="w-[140px] bg-background/50 border-white/10 flex-shrink-0">
                     <SelectValue placeholder="カテゴリなし" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="uncategorized">未分類</SelectItem>
-                    {categories.filter(c => !c.isArchived).map((category) => (
+                    {/* 固定カテゴリ */}
+                    {fixedCategoryEntries.map((category) => (
                         <SelectItem key={category.id} value={category.id.toString()}>
                             <span className="flex items-center gap-2">
                                 <span
@@ -84,12 +151,28 @@ export function TaskInput({
                             </span>
                         </SelectItem>
                     ))}
+                    {/* その他の既存カテゴリ */}
+                    {otherCategories.length > 0 && (
+                        <>
+                            {otherCategories.map((category) => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
+                                    <span className="flex items-center gap-2">
+                                        <span
+                                            className="w-2 h-2 rounded-full"
+                                            style={{ backgroundColor: category.color }}
+                                        ></span>
+                                        {category.name}
+                                    </span>
+                                </SelectItem>
+                            ))}
+                        </>
+                    )}
                 </SelectContent>
             </Select>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button size="icon" variant="ghost" className="rounded-full hover:bg-white/10">
+                    <Button size="icon" variant="ghost" className="rounded-full hover:bg-white/10 flex-shrink-0">
                         <Plus className="h-5 w-5" />
                     </Button>
                 </DialogTrigger>

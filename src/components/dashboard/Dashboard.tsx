@@ -7,7 +7,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { Loader2 } from "lucide-react";
 
-import { Trash2, Pencil, Eye, EyeOff, Download } from "lucide-react";
+import { Trash2, Pencil, Eye, EyeOff, Download, PenLine, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useCategories } from "@/hooks/useCategories";
-import { LogData, DashboardRange } from "@/hooks/useDashboardData"; // Import LogData type
+import { LogData, DashboardRange } from "@/hooks/useDashboardData";
+import { FIXED_CATEGORIES, TASK_OPTIONS_BY_CATEGORY, ALL_TASK_OPTIONS } from "@/lib/taskOptions";
 
 export function Dashboard() {
     const { totalTime, chartData, logs, isLoading, deleteLog, updateLog, refreshLogs, range, setRange } = useDashboardData();
@@ -59,10 +60,23 @@ export function Dashboard() {
     const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
     const [editHours, setEditHours] = useState(0);
     const [editMinutes, setEditMinutes] = useState(0);
+    const [editIsFreeText, setEditIsFreeText] = useState(false);
+
+    // カテゴリを固定リスト + その他に分離
+    const activeCategories = categories.filter(c => !c.isArchived);
+    const fixedCategoryEntries = activeCategories.filter(c =>
+        (FIXED_CATEGORIES as readonly string[]).includes(c.name)
+    );
+    const otherCategories = activeCategories.filter(c =>
+        !(FIXED_CATEGORIES as readonly string[]).includes(c.name)
+    );
 
     const handleEditClick = (log: LogData) => {
         setEditingLogId(log.id);
         setEditTitle(log.title);
+        // 既存タイトルがプルダウン項目に含まれるかチェック
+        const isInOptions = ALL_TASK_OPTIONS.includes(log.title);
+        setEditIsFreeText(!isInOptions);
         // Find category ID from name
         const matchedCat = categories.find(c => c.name === log.category);
         setEditCategoryId(matchedCat ? matchedCat.id : "uncategorized");
@@ -74,6 +88,25 @@ export function Dashboard() {
         setEditMinutes(m);
 
         setIsEditOpen(true);
+    };
+
+    // 編集ダイアログ用: カテゴリに連動した作業内容フィルタ
+    const editCategoryName = editCategoryId && editCategoryId !== "uncategorized"
+        ? categories.find(c => c.id === editCategoryId)?.name
+        : null;
+    const editCurrentTaskOptions = editCategoryName && TASK_OPTIONS_BY_CATEGORY[editCategoryName]
+        ? TASK_OPTIONS_BY_CATEGORY[editCategoryName]
+        : ALL_TASK_OPTIONS;
+
+    const handleEditCategoryChange = (catId: string) => {
+        setEditCategoryId(catId);
+        const catName = catId !== "uncategorized" ? categories.find(c => c.id === catId)?.name : null;
+        const newOptions = catName && TASK_OPTIONS_BY_CATEGORY[catName]
+            ? TASK_OPTIONS_BY_CATEGORY[catName]
+            : ALL_TASK_OPTIONS;
+        if (editTitle && !newOptions.includes(editTitle)) {
+            setEditTitle("");
+        }
     };
 
     const handleSaveEdit = async () => {
@@ -309,24 +342,64 @@ export function Dashboard() {
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="edit-title">タスク名</Label>
-                                <Input
-                                    id="edit-title"
-                                    value={editTitle}
-                                    onChange={(e) => setEditTitle(e.target.value)}
-                                />
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="edit-title">作業内容</Label>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 px-2 text-xs gap-1"
+                                        onClick={() => {
+                                            setEditIsFreeText(!editIsFreeText);
+                                            setEditTitle("");
+                                        }}
+                                    >
+                                        {editIsFreeText ? <List className="h-3 w-3" /> : <PenLine className="h-3 w-3" />}
+                                        {editIsFreeText ? "リストから選択" : "自由記入"}
+                                    </Button>
+                                </div>
+                                {editIsFreeText ? (
+                                    <Input
+                                        id="edit-title"
+                                        value={editTitle}
+                                        onChange={(e) => setEditTitle(e.target.value)}
+                                    />
+                                ) : (
+                                    <Select value={editTitle || ""} onValueChange={setEditTitle}>
+                                        <SelectTrigger id="edit-title">
+                                            <SelectValue placeholder="作業内容を選択" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                        {editCurrentTaskOptions.map((option) => (
+                                            <SelectItem key={option} value={option}>
+                                                {option}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                )}
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="edit-category">カテゴリ</Label>
-                                <Select value={editCategoryId || "uncategorized"} onValueChange={setEditCategoryId}>
+                                <Select value={editCategoryId || "uncategorized"} onValueChange={handleEditCategoryChange}>
                                     <SelectTrigger id="edit-category">
                                         <SelectValue placeholder="カテゴリを選択" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="uncategorized">未分類</SelectItem>
-                                        {categories.map((cat) => (
+                                        {fixedCategoryEntries.map((cat) => (
                                             <SelectItem key={cat.id} value={cat.id}>
-                                                {cat.name}
+                                                <span className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></span>
+                                                    {cat.name}
+                                                </span>
+                                            </SelectItem>
+                                        ))}
+                                        {otherCategories.map((cat) => (
+                                            <SelectItem key={cat.id} value={cat.id}>
+                                                <span className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></span>
+                                                    {cat.name}
+                                                </span>
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
