@@ -6,6 +6,8 @@ export function useTimer() {
     const [entryId, setEntryId] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
+    // 開始時刻をrefで保持（Date.now()のミリ秒）
+    const startTimeRef = useRef<number | null>(null)
 
     // 初期ロード時：未完了のタイマーがあれば復元
     useEffect(() => {
@@ -21,9 +23,10 @@ export function useTimer() {
 
                 if (activeEntry) {
                     const startTime = new Date(activeEntry.startTime).getTime()
-                    const now = new Date().getTime()
+                    const now = Date.now()
                     const elapsed = Math.floor((now - startTime) / 1000)
 
+                    startTimeRef.current = startTime
                     setSeconds(elapsed >= 0 ? elapsed : 0)
                     setEntryId(activeEntry.id)
                     setIsPlaying(true)
@@ -38,11 +41,12 @@ export function useTimer() {
         fetchActiveTimer()
     }, [])
 
-    // タイマーのカウントアップ
+    // タイマーのカウントアップ（開始時刻との差分で計算）
     useEffect(() => {
-        if (isPlaying) {
+        if (isPlaying && startTimeRef.current !== null) {
             intervalRef.current = setInterval(() => {
-                setSeconds((s) => s + 1)
+                const elapsed = Math.floor((Date.now() - startTimeRef.current!) / 1000)
+                setSeconds(elapsed >= 0 ? elapsed : 0)
             }, 1000)
         } else {
             if (intervalRef.current) {
@@ -74,7 +78,9 @@ export function useTimer() {
 
             const data = await res.json()
 
+            startTimeRef.current = Date.now()
             setEntryId(data.id)
+            setSeconds(0)
             setIsPlaying(true)
         } catch (error) {
             console.error('Error starting timer:', error)
@@ -90,13 +96,11 @@ export function useTimer() {
             setIsLoading(true)
             const endTime = new Date().toISOString()
 
+            // duration はサーバー側で startTime と endTime から計算するので送らない
             const res = await fetch(`/api/time-entries/${entryId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    endTime,
-                    duration: seconds,
-                }),
+                body: JSON.stringify({ endTime }),
             })
 
             if (!res.ok) throw new Error('Failed to stop timer')
@@ -104,12 +108,13 @@ export function useTimer() {
             setIsPlaying(false)
             setEntryId(null)
             setSeconds(0)
+            startTimeRef.current = null
         } catch (error) {
             console.error('Error stopping timer:', error)
         } finally {
             setIsLoading(false)
         }
-    }, [entryId, seconds])
+    }, [entryId])
 
     const toggleTimer = useCallback((description?: string, categoryId?: string | null) => {
         if (isPlaying) {
